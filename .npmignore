@@ -1,0 +1,17 @@
+# Fontes e Testes
+src/
+test/
+tsconfig.json
+.gitignore
+.npmignore
+
+# Node e Logs
+node_modules/
+logs/
+package-lock.json
+
+# Outros
+.vscode/
+.idea/
+.DS_Store
+*.log

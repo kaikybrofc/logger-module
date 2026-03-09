@@ -1,0 +1,38 @@
+{
+  "name": "logger-module",
+  "version": "1.0.0",
+  "description": "Módulo de log moderno em TypeScript usando Winston e Rotação de Arquivos.",
+  "main": "dist/logger.js",
+  "types": "dist/logger.d.ts",
+  "type": "module",
+  "author": "Seu Nome <email@exemplo.com>",
+  "license": "MIT",
+  "keywords": [
+    "logger",
+    "typescript",
+    "winston",
+    "daily-rotate-file",
+    "logging"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/logger.js",
+    "dev": "tsx src/logger.ts",
+    "test": "tsx test/logger.test.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "envalid": "^8.0.0",
+    "winston": "^3.12.0",
+    "winston-daily-rotate-file": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3"
+  }
+}
