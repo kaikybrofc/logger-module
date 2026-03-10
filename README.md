@@ -19,6 +19,24 @@ Um módulo de log moderno, robusto e de alta performance para aplicações Node.
 npm install @kaikybrofc/logger-module
 ```
 
+## 📦 Publicação (npm + GitHub Packages)
+
+O comando abaixo publica a nova versão em **dois registries**:
+
+- npmjs (`registry.npmjs.org`)
+- GitHub Packages (`npm.pkg.github.com`)
+
+```bash
+npm run release
+```
+
+Pré-requisitos no `.env`:
+
+- `NPM_TOKEN` com permissão de publish no npmjs
+- `GITHUB_TOKEN` com `repo`, `read:packages` e `write:packages`
+
+Com isso, o pacote passa a aparecer na aba **Packages** do repositório no GitHub após a publicação.
+
 ## ⚙️ Configuração
 
 O módulo é configurado via variáveis de ambiente.

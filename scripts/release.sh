@@ -46,6 +46,13 @@ fi
 # Variáveis do Repositório
 REPO_URL=$(jq -r '.repository.url' package.json | sed -E 's|git\+https://github.com/||g' | sed 's|\.git||')
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+PACKAGE_NAME=$(jq -r '.name' package.json)
+PACKAGE_SCOPE=$(echo "$PACKAGE_NAME" | sed -n 's/^@\([^/]*\)\/.*/\1/p')
+
+if [ -z "$PACKAGE_SCOPE" ]; then
+  log_error "O pacote em package.json precisa ser escopado (@owner/nome) para publicar no GitHub Packages."
+  exit 1
+fi
 
 if [ "$CURRENT_BRANCH" != "main" ] && [ "$CURRENT_BRANCH" != "master" ]; then
   log_warn "Você está na branch '$CURRENT_BRANCH'. É recomendado fazer release na branch 'main'."
@@ -84,6 +91,21 @@ if ! npm whoami --userconfig .npmrc_temp &> /dev/null; then
   exit 1
 fi
 log_info "NPM Token: OK"
+
+log_info "Verificando publicação no GitHub Packages..."
+{
+  echo "@${PACKAGE_SCOPE}:registry=https://npm.pkg.github.com"
+  echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}"
+  echo "always-auth=true"
+} > .npmrc_github_temp
+
+if ! npm whoami --registry https://npm.pkg.github.com --userconfig .npmrc_github_temp &> /dev/null; then
+  log_error "GITHUB_TOKEN inválido para npm.pkg.github.com ou sem permissão de package:write."
+  log_warn "Ação cancelada de forma segura antes de realizar qualquer alteração."
+  rm -f .npmrc_temp .npmrc_github_temp
+  exit 1
+fi
+log_info "GitHub Packages: OK"
 
 # --- 2. Lógica de Versionamento Customizada ---
 log_step "Calculando Nova Versão"
@@ -127,7 +149,7 @@ rollback() {
   log_error "Uma etapa falhou! Revertendo alterações no repositório local..."
   
   # Remove o .npmrc_temp
-  rm -f .npmrc_temp
+  rm -f .npmrc_temp .npmrc_github_temp
   
   # Remove a tag local se tiver sido criada
   if git rev-parse "v${NEW_VERSION}" >/dev/null 2>&1; then
@@ -180,8 +202,12 @@ log_step "Publicando pacote compilado no NPM"
 npm publish --userconfig .npmrc_temp --access public
 log_info "Pacote v${NEW_VERSION} publicado com sucesso no NPM!"
 
-# Limpando credenciais temporárias do NPM após uso com sucesso
-rm -f .npmrc_temp
+log_step "Publicando pacote compilado no GitHub Packages"
+npm publish --registry https://npm.pkg.github.com --userconfig .npmrc_github_temp
+log_info "Pacote v${NEW_VERSION} publicado com sucesso no GitHub Packages!"
+
+# Limpando credenciais temporárias após uso com sucesso
+rm -f .npmrc_temp .npmrc_github_temp
 
 # --- 6. Publicação no GitHub ---
 log_step "Enviando alterações e criando Release no GitHub"
