@@ -1,12 +1,20 @@
 {
-  "name": "logger-module",
+  "name": "@kaikybrofc/logger-module",
   "version": "1.0.0",
   "description": "Módulo de log moderno em TypeScript usando Winston e Rotação de Arquivos.",
   "main": "dist/logger.js",
   "types": "dist/logger.d.ts",
   "type": "module",
-  "author": "Seu Nome <email@exemplo.com>",
+  "author": "Kaiky <kaikybrofc@exemplo.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kaikybrofc/logger-module.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kaikybrofc/logger-module/issues"
+  },
+  "homepage": "https://github.com/kaikybrofc/logger-module#readme",
   "keywords": [
     "logger",
     "typescript",
@@ -24,6 +32,9 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "dotenv": "^16.4.5",
     "envalid": "^8.0.0",
