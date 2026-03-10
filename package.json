@@ -2,8 +2,8 @@
   "name": "@kaikybrofc/logger-module",
   "version": "1.0.3",
   "description": "Módulo de log moderno em TypeScript usando Winston e Rotação de Arquivos.",
-  "main": "dist/logger.js",
-  "types": "dist/logger.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "type": "module",
   "author": "kaikybrofc",
   "license": "MIT",
@@ -24,9 +24,9 @@
   ],
   "scripts": {
     "build": "tsc",
-    "start": "node dist/logger.js",
-    "dev": "tsx src/logger.ts",
-    "test": "tsx test/logger.test.ts",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "test": "for f in test/*.test.ts; do echo \"Running $f...\"; tsx \"$f\" || exit 1; done",
     "prepublishOnly": "npm run build",
     "release": "./scripts/release.sh"
   },

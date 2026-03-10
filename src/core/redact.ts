@@ -1,25 +1,54 @@
 import winston from 'winston';
-import { redact } from '../config/redaction.js';
+import { SENSITIVE_KEYS } from '../config/redaction.js';
 import util from 'node:util';
 
+const SENSITIVE_SET = new Set(SENSITIVE_KEYS);
+
 /**
- * Formato Winston para redação de dados sensíveis utilizando fast-redact.
- * Usa util.inspect para clonagem segura contra referências circulares.
+ * Formato Winston para redação de dados sensíveis.
+ * Realiza uma cópia profunda segura contra referências circulares e
+ * aplica redação em todas as chaves sensíveis encontradas.
  */
 export const redigirDados = winston.format((info) => {
-  try {
-    // Clonagem segura para evitar erros de referências circulares e manter performance
-    // O fast-redact opera melhor em objetos puros.
-    const infoRedigido = JSON.parse(JSON.stringify(info, (key, value) => {
-      if (typeof value === 'bigint') return value.toString();
-      return value;
-    }));
+  const seen = new WeakMap();
+  // console.log('[DEBUG:INFO]', util.inspect(info, { depth: 3 }));
 
-    redact(infoRedigido);
-    return infoRedigido;
+  const processarERedigir = (obj: any): any => {
+    if (obj === null || typeof obj !== 'object') return obj;
+    if (typeof obj === 'bigint') return obj.toString();
+    if (obj instanceof Date) return obj.toISOString();
+    if (obj instanceof RegExp) return obj.toString();
+    if (obj instanceof Error) return { message: obj.message, stack: obj.stack, ...obj };
+
+    if (seen.has(obj)) return '[Circular]';
+    
+    const isArray = Array.isArray(obj);
+    const result = isArray ? [] : {};
+    seen.set(obj, result);
+
+    // Processa propriedades normais
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        if (SENSITIVE_SET.has(key)) {
+          (result as any)[key] = '[REDACTED]';
+        } else {
+          (result as any)[key] = processarERedigir(obj[key]);
+        }
+      }
+    }
+
+    // Copia Symbols (Winston internals)
+    const symbols = Object.getOwnPropertySymbols(obj);
+    for (const sym of symbols) {
+      (result as any)[sym] = (obj as any)[sym];
+    }
+
+    return result;
+  };
+
+  try {
+    return processarERedigir(info);
   } catch (erro) {
-    // Fallback: se o JSON.stringify falhar (ex: ref circular), usamos o objeto original
-    // O fast-redact pode não pegar tudo se o objeto for complexo, mas o logger não trava.
     return info;
   }
 });

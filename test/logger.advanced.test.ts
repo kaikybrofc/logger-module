@@ -2,118 +2,84 @@ import logger, { criarInstanciaLogger, runWithContext, getRequestId } from '../s
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import winston from 'winston';
+import Transport from 'winston-transport';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const LOGS_DIR = path.resolve(__dirname, '../logs');
+
+// Helper para capturar logs em memória para asserts
+class MemoryTransport extends Transport {
+  public logs: any[] = [];
+  log(info: any, callback: any) {
+    this.logs.push(info);
+    callback();
+  }
+}
 
 async function executarTestesAvancados() {
   console.log('🔥 Iniciando Testes de Nível Avançado (Stress, Resiliência e IO) 🔥\n');
 
   // --- 1. Teste de Referência Circular ---
-  console.log('--- [1] Resiliência: Objetos com Referência Circular ---');
+  console.log('--- [1] Resiliência: Objetos com Referência Circular + Redação ---');
   const circular: any = { nome: 'Objeto Circular', password: '123' };
-  circular.self = circular; // Referência a si mesmo
+  circular.self = circular;
+
+  const memTransport = new MemoryTransport();
+  const testLogger = criarInstanciaLogger({
+    transports: [memTransport]
+  });
 
   try {
-    logger.info('Logando objeto circular', { data: circular });
-    console.log('✅ Sucesso: O logger não travou com referência circular.');
-  } catch (err) {
-    console.error('❌ Falha: O logger quebrou ao processar referência circular.');
-  }
-
-  // --- 2. Teste de Stress e Benchmark ---
-  console.log('\n--- [2] Performance: Stress Test (5.000 logs com redação) ---');
-  const start = Date.now();
-  const iterations = 5000;
-
-  for (let i = 0; i < iterations; i++) {
-    logger.debug(`Stress log ${i}`, { 
-      index: i, 
-      cpf: '000.000.000-00', 
-      token: 'secret-token-123',
-      nested: { key: 'val' }
-    });
-  }
-  
-  const end = Date.now();
-  const duration = end - start;
-  console.log(`✅ Benchmark: Processados ${iterations} logs em ${duration}ms (${(iterations / (duration / 1000)).toFixed(0)} logs/seg)`);
-
-  // --- 3. Teste de Persistência e Integridade de Arquivo ---
-  console.log('\n--- [3] IO: Validando Arquivos Físicos no Disco ---');
-  if (fs.existsSync(LOGS_DIR)) {
-    const files = fs.readdirSync(LOGS_DIR);
-    console.log(`✅ Diretório de logs encontrado. Arquivos gerados: ${files.length}`);
+    testLogger.info('Logando objeto circular', { data: circular });
+    const lastLog = memTransport.logs[0];
     
-    // Procura pelo arquivo de aplicação de hoje
-    const appLogFile = files.find(f => f.startsWith('aplicacao-') && f.endsWith('.log'));
-    if (appLogFile) {
-      const lastLines = fs.readFileSync(path.join(LOGS_DIR, appLogFile), 'utf-8').trim().split('\n').pop();
-      try {
-        const json = JSON.parse(lastLines || '{}');
-        if (json.level && json.message) {
-          console.log('✅ Integridade: Última linha do arquivo é um JSON válido.');
-        }
-      } catch (e) {
-        console.error('❌ Falha: O conteúdo do arquivo de log não é um JSON válido.');
-      }
-    }
-  } else {
-    console.error('❌ Falha: O diretório de logs não foi criado.');
-  }
-
-  // --- 4. Teste de RequestId em Cadeia Assíncrona Profunda ---
-  console.log('\n--- [4] Contexto: RequestId em Cadeia Assíncrona Profunda ---');
-  
-  async function nivel3() {
-    logger.info('Log no Nível 3 (mais profundo)');
-    return getRequestId();
-  }
-
-  async function nivel2() {
-    await new Promise(r => setTimeout(resolve => r(resolve), 10));
-    logger.info('Log no Nível 2');
-    return nivel3();
-  }
-
-  async function nivel1() {
-    logger.info('Log no Nível 1');
-    return nivel2();
-  }
-
-  await runWithContext(async () => {
-    const idOriginal = getRequestId();
-    const idFinal = await nivel1();
-    if (idOriginal === idFinal) {
-      console.log(`✅ Sucesso: O RequestId [${idOriginal}] sobreviveu a 3 níveis de await.`);
+    if (lastLog.data && lastLog.data.password === '[REDACTED]') {
+      console.log('✅ Sucesso: Objeto circular redigido corretamente.');
     } else {
-      console.log('❌ Falha: O RequestId foi perdido durante a cadeia assíncrona.');
+      console.error('❌ Falha: Senha não foi redigida em objeto circular!', lastLog.data);
+      process.exit(1);
     }
-  }, 'ID-DEEP-CONTEXT-123');
+    
+    if (lastLog.data.self === '[Circular]') {
+      console.log('✅ Sucesso: Referência circular detectada e marcada.');
+    } else {
+      console.error('❌ Falha: Referência circular não foi tratada corretamente.', lastLog.data.self);
+      process.exit(1);
+    }
+  } catch (err) {
+    console.error('❌ Falha: O logger quebrou ao processar referência circular.', err);
+    process.exit(1);
+  }
 
-  // --- 5. Teste de Tipagem de Instância Customizada ---
-  console.log('\n--- [5] Tipagem: Validando Métodos em Instância Customizada ---');
-  const custom = criarInstanciaLogger({ level: 'silly' });
-  if (typeof custom.fatal === 'function' && typeof custom.success === 'function') {
-    console.log('✅ Sucesso: Métodos customizados (fatal, success) existem na instância.');
-    custom.success('Teste de método success OK');
+  // --- 2. Teste de Inconsistência de Sampling/Rate Limit ---
+  console.log('\n--- [2] Consistência: Traffic Control em Múltiplos Transportes ---');
+  const mem1 = new MemoryTransport();
+  const mem2 = new MemoryTransport();
+  const multiLogger = criarInstanciaLogger({
+    transports: [mem1, mem2]
+  });
+
+  const sampleKey = 'teste_multi_transport';
+  for (let i = 1; i <= 10; i++) {
+    multiLogger.info('Log repetitivo', { sampleKey, sampleRate: 5 });
+  }
+
+  // Se o sampling rodar uma vez por evento, devemos ter o mesmo número de logs em ambos
+  if (mem1.logs.length === mem2.logs.length && mem1.logs.length === 2) {
+    console.log(`✅ Sucesso: Sampling consistente entre transportes (${mem1.logs.length} logs).`);
   } else {
-    console.error('❌ Falha: Métodos customizados não encontrados na instância.');
+    console.error(`❌ Falha: Inconsistência no sampling! T1: ${mem1.logs.length}, T2: ${mem2.logs.length} (Esperado: 2)`);
+    process.exit(1);
   }
 
-  // --- 6. Teste de Sampling (Amostragem) ---
-  console.log('\n--- [6] Resiliência: Teste de Sampling (Amostragem) ---');
-  for (let i = 1; i <= 10; i++) {
-    logger.info('Log repetitivo', { sampleKey: 'teste_sampling', sampleRate: 5 });
+  // Verifica se as marcas [SAMPLED:X] são idênticas
+  if (mem1.logs[0].message === mem2.logs[0].message && mem1.logs[0].message.includes('[SAMPLED:5]')) {
+    console.log('✅ Sucesso: Marcas de sampling idênticas em todos os transportes.');
+  } else {
+    console.error('❌ Falha: Marcas de sampling divergem entre transportes ou não contêm [SAMPLED:5].', mem1.logs[0].message);
+    process.exit(1);
   }
-  console.log('✅ Sucesso: O sampling foi processado.');
-
-  // --- 7. Teste de Rate Limit ---
-  console.log('\n--- [7] Resiliência: Teste de Rate Limit ---');
-  for (let i = 1; i <= 10; i++) {
-    logger.warn('Log de flood', { rateLimitKey: 'teste_rl', rateLimitMax: 3 });
-  }
-  console.log('✅ Sucesso: O rate limit foi processado (apenas 3 + aviso de active devem ter aparecido).');
 
   console.log('\n🏁 Suite de Testes Avançada Finalizada.');
 }

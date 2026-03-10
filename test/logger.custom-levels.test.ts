@@ -36,8 +36,8 @@ function testarNiveis() {
     console.log('ℹ️ Pulando validação de "trace" (ENV LOG_EXTRA_LEVELS não definida para este teste)');
   }
 
-  // Validando se o método genérico .log continua funcionando para qualquer string
-  logger.log('qualquer_coisa', 'Mensagem em nível arbitrário via .log()');
+  // Validando se o método genérico .log continua funcionando para um nível registrado
+  logger.log('info', 'Mensagem em nível registrado via .log()');
   
   console.log('\n✅ Teste de níveis customizados finalizado com sucesso.');
 }

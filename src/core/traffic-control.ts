@@ -13,6 +13,17 @@ interface TrafficState {
 
 const trafficState = new Map<string, TrafficState>();
 
+// Intervalo para limpeza do Map (cada 5 minutos)
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, state] of trafficState.entries()) {
+    // Se não foi resetado nos últimos 10 minutos, removemos
+    if (now - state.lastReset > 600000) {
+      trafficState.delete(key);
+    }
+  }
+}, 300000).unref(); // .unref() permite que o processo termine se este for o único timer ativo
+
 /**
  * Formato Winston para controle de tráfego (Sampling + Rate Limit).
  */
@@ -58,7 +69,7 @@ export const controlarTrafego = winston.format((info) => {
 
     state.count++;
 
-    if (state.count === 1 || state.count % rate === 0) {
+    if (state.count % rate === 0) {
       info.message = `[SAMPLED:${state.count}] ${info.message}`;
       return info;
     }

@@ -40,7 +40,6 @@ const injetarContexto = winston.format((info) => {
 });
 
 const formatoConsole = winston.format.combine(
-  controlarTrafego(),
   injetarContexto(),
   winston.format.timestamp({ format: () => new Date().toISOString() }),
   winston.format.splat(),
@@ -74,7 +73,6 @@ const formatoConsole = winston.format.combine(
 );
 
 const formatoArquivo = winston.format.combine(
-  controlarTrafego(),
   injetarContexto(),
   winston.format.timestamp(),
   winston.format.splat(),
@@ -227,7 +225,11 @@ export const criarInstanciaLogger = (opcoes: OpcoesLogger = {}): LoggerInstancia
   return winston.createLogger({
     level: nivelEfetivo,
     levels: NIVEIS_LOG,
-    format: opcoes.format || winston.format.combine(winston.format.errors({ stack: true })),
+    format: winston.format.combine(
+      redigirDados(),
+      controlarTrafego(),
+      opcoes.format || winston.format.errors({ stack: true })
+    ),
     defaultMeta: {
       service: NOME_ECOSSISTEMA,
       instanceId: ID_INSTANCIA,
