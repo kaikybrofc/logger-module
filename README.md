@@ -31,6 +31,7 @@ npm install @kaikybrofc/logger-module
 | `LOG_SAMPLING_RATE` | Taxa de amostragem global (0.0 a 1.0) | `1.0` |
 | `LOG_RATE_LIMIT_MAX` | Máximo de logs por janela para uma chave | `100` |
 | `LOG_SENSITIVE_FILE` | Arquivo com chaves sensíveis extras | - |
+| `LOG_AUDIT_IMMUTABLE` | Ativa trilha de auditoria com Hashing (Chain-of-Trust) | `false` |
 | `LOKI_HOST` | URL do host Grafana Loki | - |
 | `ELASTICSEARCH_NODE` | URL do node Elasticsearch | - |
 | `DATADOG_API_KEY` | API Key do Datadog | - |
@@ -45,6 +46,13 @@ O logger suporta exportação automática para serviços externos se configurado
 - **Datadog**: Requer `datadog-winston`
 
 O carregamento é **dinâmico e opcional**, não bloqueando o funcionamento do logger caso as bibliotecas não estejam presentes.
+
+### 🛡️ Auditoria Imutável (Chain-of-Trust)
+Quando `LOG_AUDIT_IMMUTABLE=true` é ativado, todos os logs de nível `audit` são gravados em um arquivo especial (`logs/auditoria.log`) onde cada linha é encadeada à anterior via hashing SHA-256. Se qualquer entrada for alterada, a cadeia de hashes será invalidada, garantindo integridade e conformidade.
+
+```typescript
+logger.audit('Acesso a dados sensíveis', { userId: 123 });
+```
 
 ### 🚦 Controle de Tráfego (Rate Limit & Sampling)
 Evite flood de logs e reduza custos de infraestrutura:

@@ -29,6 +29,7 @@ import {
 import { getRequestId } from '../context/storage.js';
 import { redigirDados } from './redact.js';
 import { controlarTrafego } from './traffic-control.js';
+import { AuditTransport } from './audit.js';
 
 // --- Formatação ---
 
@@ -207,12 +208,20 @@ export const criarInstanciaLogger = (opcoes: OpcoesLogger = {}): LoggerInstancia
           const DatadogTransport = require('datadog-winston');
           return new DatadogTransport(def.options);
         }
+        if (def.type === 'audit') {
+          return new AuditTransport(def.options);
+        }
       } catch (err) {
         console.warn(`[LOGGER] Falha ao carregar transporte '${def.type}'. Certifique-se de que a biblioteca necessária está instalada.`);
         return null;
       }
       return null;
     }).filter(t => t !== null)) as winston.transport[];
+  }
+
+  // Adiciona transporte de auditoria imutável se habilitado
+  if (env.LOG_AUDIT_IMMUTABLE) {
+    transportes.push(new AuditTransport({ level: 'audit' }));
   }
 
   return winston.createLogger({

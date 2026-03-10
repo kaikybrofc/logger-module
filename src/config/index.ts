@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { cleanEnv, str } from 'envalid';
+import { cleanEnv, str, bool } from 'envalid';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { NivelLog } from '../types/index.js';
@@ -87,6 +87,9 @@ export const env = cleanEnv(process.env, {
   // Datadog
   DATADOG_API_KEY: str({ default: '', desc: 'API Key do Datadog' }),
 
+  // Auditoria Imutável
+  LOG_AUDIT_IMMUTABLE: bool({ default: false }),
+
   name: str({ default: undefined }),
   PM2_INSTANCE_ID: str({ default: undefined }),
   NODE_APP_INSTANCE: str({ default: undefined }),
@@ -126,6 +129,7 @@ export const PADROES_LOG = {
   NOME_ARQUIVO_APP: 'aplicacao-%DATE%.log',
   NOME_ARQUIVO_ERRO: 'erro-%DATE%.log',
   NOME_ARQUIVO_AVISO: 'aviso-%DATE%.log',
+  NOME_ARQUIVO_AUDITORIA: 'auditoria.log',
   PADRAO_DATA: 'YYYY-MM-DD',
   ARQUIVO_ZIPADO: true,
   TAMANHO_MAX_APP: '20m',
