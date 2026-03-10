@@ -5,6 +5,8 @@ import winston from 'winston';
  */
 export type NivelLog = 
   | 'fatal' 
+  | 'security'
+  | 'audit'
   | 'emerg' 
   | 'alert' 
   | 'crit' 
@@ -16,13 +18,16 @@ export type NivelLog =
   | 'http' 
   | 'verbose' 
   | 'debug' 
-  | 'silly';
+  | 'silly'
+  | (string & {}); // Permite níveis dinâmicos via env
 
 /**
- * Interface estendida do Winston Logger para incluir métodos tipados dos novos níveis.
+ * Interface estendida do Winston Logger para incluir métodos tipados e dinâmicos.
  */
 export interface LoggerInstancia extends winston.Logger {
   fatal: winston.LeveledLogMethod;
+  security: winston.LeveledLogMethod;
+  audit: winston.LeveledLogMethod;
   emerg: winston.LeveledLogMethod;
   alert: winston.LeveledLogMethod;
   crit: winston.LeveledLogMethod;
@@ -35,6 +40,7 @@ export interface LoggerInstancia extends winston.Logger {
   verbose: winston.LeveledLogMethod;
   debug: winston.LeveledLogMethod;
   silly: winston.LeveledLogMethod;
+  [customLevel: string]: winston.LeveledLogMethod | any; // Assinatura de índice para níveis dinâmicos
 }
 
 /**

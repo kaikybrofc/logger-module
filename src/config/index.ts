@@ -8,39 +8,41 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Definição dos níveis de severidade (Inspirado em RFC5424 + customizados)
-export const NIVEIS_LOG: Record<NivelLog, number> = {
+const NIVEIS_ESTATICOS: Record<string, number> = {
   fatal: 0,
-  emerg: 1,
-  alert: 2,
-  crit: 3,
-  error: 4,
-  warn: 5,
-  notice: 6,
-  info: 7,
-  success: 8,
-  http: 9,
-  verbose: 10,
-  debug: 11,
-  silly: 12,
+  security: 1,
+  audit: 2,
+  emerg: 3,
+  alert: 4,
+  crit: 5,
+  error: 6,
+  warn: 7,
+  notice: 8,
+  info: 9,
+  success: 10,
+  http: 11,
+  verbose: 12,
+  debug: 13,
+  silly: 14,
 };
 
-export const NOMES_NIVEIS = Object.keys(NIVEIS_LOG) as NivelLog[];
-
 // Mapeamento de cores ANSI simples
-export const ANSI_COLORS: Record<string, string> = {
-  fatal: '\x1b[31m\x1b[1m',
-  emerg: '\x1b[31m',
-  alert: '\x1b[33m',
-  crit: '\x1b[31m',
-  error: '\x1b[31m',
-  warn: '\x1b[33m',
-  notice: '\x1b[34m',
-  info: '\x1b[32m',
-  success: '\x1b[32m',
-  http: '\x1b[35m',
-  verbose: '\x1b[36m',
-  debug: '\x1b[34m',
-  silly: '\x1b[90m',
+const CORES_ESTATICAS: Record<string, string> = {
+  fatal: '\x1b[31m\x1b[1m',    // Red Bold
+  security: '\x1b[35m\x1b[1m', // Magenta Bold
+  audit: '\x1b[36m\x1b[1m',    // Cyan Bold
+  emerg: '\x1b[31m',           // Red
+  alert: '\x1b[33m',           // Yellow
+  crit: '\x1b[31m',            // Red
+  error: '\x1b[31m',           // Red
+  warn: '\x1b[33m',            // Yellow
+  notice: '\x1b[34m',          // Blue
+  info: '\x1b[32m',            // Green
+  success: '\x1b[32m',         // Green
+  http: '\x1b[35m',            // Magenta
+  verbose: '\x1b[36m',         // Cyan
+  debug: '\x1b[34m',           // Blue
+  silly: '\x1b[90m',           // Grey
   reset: '\x1b[0m'
 };
 
@@ -51,21 +53,42 @@ export const env = cleanEnv(process.env, {
     default: 'development',
   }),
   LOG_LEVEL: str({
-    choices: NOMES_NIVEIS,
     default: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+  }),
+  LOG_EXTRA_LEVELS: str({ 
+    default: '', 
+    desc: 'Níveis extras no formato nome:prioridade,ex: trace:15' 
   }),
   ECOSYSTEM_NAME: str({ default: 'sistema' }),
   LOG_FORMAT: str({ 
     choices: ['pretty', 'json'], 
     default: process.env.NODE_ENV === 'production' ? 'json' : 'pretty',
-    desc: 'Formato de saída do log no console'
   }),
-  LOG_SENSITIVE_FILE: str({ default: '', desc: 'Caminho para arquivo customizado com chaves sensíveis' }),
+  LOG_SENSITIVE_FILE: str({ default: '' }),
   name: str({ default: undefined }),
   PM2_INSTANCE_ID: str({ default: undefined }),
   NODE_APP_INSTANCE: str({ default: undefined }),
   pm_id: str({ default: undefined }),
 });
+
+/**
+ * Processa níveis extras vindos do ambiente.
+ */
+function obterNiveisCompletos() {
+  const niveis = { ...NIVEIS_ESTATICOS };
+  if (env.LOG_EXTRA_LEVELS) {
+    env.LOG_EXTRA_LEVELS.split(',').forEach(par => {
+      const [nome, prioridade] = par.split(':');
+      if (nome && prioridade) niveis[nome.trim()] = parseInt(prioridade.trim(), 10);
+    });
+  }
+  return niveis;
+}
+
+export const NIVEIS_LOG = obterNiveisCompletos() as Record<NivelLog, number>;
+export const NOMES_NIVEIS = Object.keys(NIVEIS_LOG) as NivelLog[];
+export const ANSI_COLORS = { ...CORES_ESTATICAS };
+
 
 export const NIVEL_LOG_PADRAO = env.LOG_LEVEL as NivelLog;
 export const ID_INSTANCIA = env.PM2_INSTANCE_ID ?? env.NODE_APP_INSTANCE ?? env.pm_id ?? 'local';
