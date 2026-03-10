@@ -77,6 +77,16 @@ export const env = cleanEnv(process.env, {
     desc: 'Tamanho da janela de tempo em milissegundos para o rate limit.' 
   }),
   LOG_SENSITIVE_FILE: str({ default: '' }),
+  
+  // Loki
+  LOKI_HOST: str({ default: '', desc: 'URL do host do Loki' }),
+  
+  // Elasticsearch
+  ELASTICSEARCH_NODE: str({ default: '', desc: 'URL do node do Elasticsearch' }),
+  
+  // Datadog
+  DATADOG_API_KEY: str({ default: '', desc: 'API Key do Datadog' }),
+
   name: str({ default: undefined }),
   PM2_INSTANCE_ID: str({ default: undefined }),
   NODE_APP_INSTANCE: str({ default: undefined }),

@@ -3,6 +3,9 @@ import DailyRotateFile from 'winston-daily-rotate-file';
 import util from 'node:util';
 import fs from 'node:fs';
 import path from 'node:path';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 import { 
   NivelLog, 
@@ -91,43 +94,85 @@ function garantirDiretorioLogs() {
   }
 }
 
-const obterDefinicoesTransportePadrao = (nivel: NivelLog): DefinicaoTransporte[] => [
-  {
-    type: 'console',
-    options: {
-      level: nivel,
-      format: env.LOG_FORMAT === 'json' ? formatoArquivo : formatoConsole,
-      handleExceptions: true,
-      handleRejections: true,
+const obterDefinicoesTransportePadrao = (nivel: NivelLog): DefinicaoTransporte[] => {
+  const transports: DefinicaoTransporte[] = [
+    {
+      type: 'console',
+      options: {
+        level: nivel,
+        format: env.LOG_FORMAT === 'json' ? formatoArquivo : formatoConsole,
+        handleExceptions: true,
+        handleRejections: true,
+      },
     },
-  },
-  {
-    type: 'dailyRotateFile',
-    options: {
-      filename: path.join(PADROES_LOG.DIR_LOGS, PADROES_LOG.NOME_ARQUIVO_APP),
-      level: nivel,
-      format: formatoArquivo,
-      datePattern: PADROES_LOG.PADRAO_DATA,
-      zippedArchive: PADROES_LOG.ARQUIVO_ZIPADO,
-      maxSize: PADROES_LOG.TAMANHO_MAX_APP,
-      maxFiles: PADROES_LOG.DIAS_MAX_APP,
+    {
+      type: 'dailyRotateFile',
+      options: {
+        filename: path.join(PADROES_LOG.DIR_LOGS, PADROES_LOG.NOME_ARQUIVO_APP),
+        level: nivel,
+        format: formatoArquivo,
+        datePattern: PADROES_LOG.PADRAO_DATA,
+        zippedArchive: PADROES_LOG.ARQUIVO_ZIPADO,
+        maxSize: PADROES_LOG.TAMANHO_MAX_APP,
+        maxFiles: PADROES_LOG.DIAS_MAX_APP,
+      },
     },
-  },
-  {
-    type: 'dailyRotateFile',
-    options: {
-      filename: path.join(PADROES_LOG.DIR_LOGS, PADROES_LOG.NOME_ARQUIVO_ERRO),
-      level: 'error',
-      format: formatoArquivo,
-      datePattern: PADROES_LOG.PADRAO_DATA,
-      zippedArchive: PADROES_LOG.ARQUIVO_ZIPADO,
-      maxSize: PADROES_LOG.TAMANHO_MAX_ERRO,
-      maxFiles: PADROES_LOG.DIAS_MAX_ERRO,
-      handleExceptions: true,
-      handleRejections: true,
+    {
+      type: 'dailyRotateFile',
+      options: {
+        filename: path.join(PADROES_LOG.DIR_LOGS, PADROES_LOG.NOME_ARQUIVO_ERRO),
+        level: 'error',
+        format: formatoArquivo,
+        datePattern: PADROES_LOG.PADRAO_DATA,
+        zippedArchive: PADROES_LOG.ARQUIVO_ZIPADO,
+        maxSize: PADROES_LOG.TAMANHO_MAX_ERRO,
+        maxFiles: PADROES_LOG.DIAS_MAX_ERRO,
+        handleExceptions: true,
+        handleRejections: true,
+      },
     },
-  },
-];
+  ];
+
+  if (env.LOKI_HOST) {
+    transports.push({
+      type: 'loki',
+      options: {
+        host: env.LOKI_HOST,
+        level: nivel,
+        labels: { app: NOME_ECOSSISTEMA, env: AMBIENTE_NODE },
+        json: true,
+        format: formatoArquivo,
+      }
+    });
+  }
+
+  if (env.ELASTICSEARCH_NODE) {
+    transports.push({
+      type: 'elasticsearch',
+      options: {
+        level: nivel,
+        node: env.ELASTICSEARCH_NODE,
+        index: `logs-${NOME_ECOSSISTEMA}-${AMBIENTE_NODE}`,
+        format: formatoArquivo,
+      }
+    });
+  }
+
+  if (env.DATADOG_API_KEY) {
+    transports.push({
+      type: 'datadog',
+      options: {
+        level: nivel,
+        apiKey: env.DATADOG_API_KEY,
+        service: NOME_ECOSSISTEMA,
+        ddsource: 'nodejs',
+        format: formatoArquivo,
+      }
+    });
+  }
+
+  return transports;
+};
 
 export const criarInstanciaLogger = (opcoes: OpcoesLogger = {}): LoggerInstancia => {
   garantirDiretorioLogs();
@@ -139,8 +184,33 @@ export const criarInstanciaLogger = (opcoes: OpcoesLogger = {}): LoggerInstancia
   } else {
     const definicoes = opcoes.transportDefinitions || obterDefinicoesTransportePadrao(nivelEfetivo);
     transportes = (definicoes.map((def) => {
-      if (def.type === 'console') return new winston.transports.Console(def.options);
-      if (def.type === 'dailyRotateFile') return new DailyRotateFile(def.options);
+      try {
+        if (def.type === 'console') return new winston.transports.Console(def.options);
+        if (def.type === 'dailyRotateFile') return new DailyRotateFile(def.options);
+        
+        // Transportes opcionais com tratamento de erro caso as bibliotecas não existam
+        if (def.type === 'loki') {
+          // @ts-ignore
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const LokiTransport = require('winston-loki');
+          return new LokiTransport(def.options);
+        }
+        if (def.type === 'elasticsearch') {
+          // @ts-ignore
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const { ElasticsearchTransport } = require('winston-elasticsearch');
+          return new ElasticsearchTransport(def.options);
+        }
+        if (def.type === 'datadog') {
+          // @ts-ignore
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const DatadogTransport = require('datadog-winston');
+          return new DatadogTransport(def.options);
+        }
+      } catch (err) {
+        console.warn(`[LOGGER] Falha ao carregar transporte '${def.type}'. Certifique-se de que a biblioteca necessária está instalada.`);
+        return null;
+      }
       return null;
     }).filter(t => t !== null)) as winston.transport[];
   }

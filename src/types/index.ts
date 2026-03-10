@@ -66,9 +66,9 @@ export interface OpcoesLogger {
 }
 
 /**
- * Definição estruturada para transportes (Console ou Arquivo).
+ * Definição estruturada para transportes (Console, Arquivo, Loki, Elastic, Datadog).
  */
 export interface DefinicaoTransporte {
-  type: 'console' | 'dailyRotateFile';
+  type: 'console' | 'dailyRotateFile' | 'loki' | 'elasticsearch' | 'datadog';
   options: any;
 }

@@ -31,8 +31,20 @@ npm install @kaikybrofc/logger-module
 | `LOG_SAMPLING_RATE` | Taxa de amostragem global (0.0 a 1.0) | `1.0` |
 | `LOG_RATE_LIMIT_MAX` | Máximo de logs por janela para uma chave | `100` |
 | `LOG_SENSITIVE_FILE` | Arquivo com chaves sensíveis extras | - |
+| `LOKI_HOST` | URL do host Grafana Loki | - |
+| `ELASTICSEARCH_NODE` | URL do node Elasticsearch | - |
+| `DATADOG_API_KEY` | API Key do Datadog | - |
 
 ## 📖 Funcionalidades em Destaque
+
+### 📤 Exportação Opcional (Loki/Elastic/Datadog)
+O logger suporta exportação automática para serviços externos se configurado via ENV e com as bibliotecas instaladas:
+
+- **Loki**: Requer `winston-loki`
+- **Elasticsearch**: Requer `winston-elasticsearch`
+- **Datadog**: Requer `datadog-winston`
+
+O carregamento é **dinâmico e opcional**, não bloqueando o funcionamento do logger caso as bibliotecas não estejam presentes.
 
 ### 🚦 Controle de Tráfego (Rate Limit & Sampling)
 Evite flood de logs e reduza custos de infraestrutura:
