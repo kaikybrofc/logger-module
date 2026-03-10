@@ -5,7 +5,7 @@
   "main": "dist/logger.js",
   "types": "dist/logger.d.ts",
   "type": "module",
-  "author": "Kaiky <kaikybrofc@exemplo.com>",
+  "author": "kaikybrofc",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -27,7 +27,8 @@
     "start": "node dist/logger.js",
     "dev": "tsx src/logger.ts",
     "test": "tsx test/logger.test.ts",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "release": "./scripts/release.sh"
   },
   "files": [
     "dist"

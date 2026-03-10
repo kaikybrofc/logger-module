@@ -10,9 +10,41 @@ import path from 'node:path';
 // --- Tipos e Interfaces ---
 
 /**
- * Níveis de log suportados pelo sistema.
+ * Níveis de log suportados pelo sistema, incluindo níveis RFC5424 e personalizados.
  */
-export type NivelLog = 'error' | 'warn' | 'info' | 'http' | 'verbose' | 'debug' | 'silly';
+export type NivelLog = 
+  | 'fatal' 
+  | 'emerg' 
+  | 'alert' 
+  | 'crit' 
+  | 'error' 
+  | 'warn' 
+  | 'notice' 
+  | 'info' 
+  | 'success'
+  | 'http' 
+  | 'verbose' 
+  | 'debug' 
+  | 'silly';
+
+/**
+ * Interface estendida do Winston Logger para incluir métodos tipados dos novos níveis.
+ */
+export interface LoggerInstancia extends winston.Logger {
+  fatal: winston.LeveledLogMethod;
+  emerg: winston.LeveledLogMethod;
+  alert: winston.LeveledLogMethod;
+  crit: winston.LeveledLogMethod;
+  error: winston.LeveledLogMethod;
+  warn: winston.LeveledLogMethod;
+  notice: winston.LeveledLogMethod;
+  info: winston.LeveledLogMethod;
+  success: winston.LeveledLogMethod;
+  http: winston.LeveledLogMethod;
+  verbose: winston.LeveledLogMethod;
+  debug: winston.LeveledLogMethod;
+  silly: winston.LeveledLogMethod;
+}
 
 /**
  * Metadados padrão para cada linha de log.
@@ -49,15 +81,22 @@ export interface DefinicaoTransporte {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Definição dos níveis de severidade (padrão Winston/RFC5424)
+// Definição dos níveis de severidade (Inspirado em RFC5424 + customizados)
+// Quanto menor o número, mais prioritário/severo é o log.
 const NIVEIS_LOG: Record<NivelLog, number> = {
-  error: 0,
-  warn: 1,
-  info: 2,
-  http: 3,
-  verbose: 4,
-  debug: 5,
-  silly: 6,
+  fatal: 0,
+  emerg: 1,
+  alert: 2,
+  crit: 3,
+  error: 4,
+  warn: 5,
+  notice: 6,
+  info: 7,
+  success: 8,
+  http: 9,
+  verbose: 10,
+  debug: 11,
+  silly: 12,
 };
 
 const NOMES_NIVEIS = Object.keys(NIVEIS_LOG) as NivelLog[];
@@ -108,9 +147,15 @@ const PADROES_LOG = {
 };
 
 const CORES_LOG: Record<NivelLog, string> = {
+  fatal: 'red bold',
+  emerg: 'red',
+  alert: 'yellow',
+  crit: 'red',
   error: 'red',
   warn: 'yellow',
+  notice: 'blue',
   info: 'green',
+  success: 'green',
   http: 'magenta',
   verbose: 'cyan',
   debug: 'blue',
@@ -245,7 +290,7 @@ function garantirDiretorioLogs() {
 /**
  * Cria e configura uma nova instância do Winston Logger.
  */
-export const criarInstanciaLogger = (opcoes: OpcoesLogger = {}) => {
+export const criarInstanciaLogger = (opcoes: OpcoesLogger = {}): LoggerInstancia => {
   garantirDiretorioLogs();
 
   const nivelEfetivo = opcoes.level || NIVEL_LOG_PADRAO;
@@ -299,10 +344,10 @@ export const criarInstanciaLogger = (opcoes: OpcoesLogger = {}) => {
 
   console.log(`[ ConfigLogger ] Instância criada. Nível: ${nivelEfetivo}, Ambiente: ${AMBIENTE_NODE}, Instância: ${ID_INSTANCIA}, Serviço: ${NOME_ECOSSISTEMA}`);
 
-  return instanciaLogger;
+  return instanciaLogger as LoggerInstancia;
 };
 
 // Exporta uma instância padrão pronta para uso
-const logger = criarInstanciaLogger();
+const logger: LoggerInstancia = criarInstanciaLogger();
 
 export default logger;
