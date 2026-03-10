@@ -1,6 +1,6 @@
 {
   "name": "@kaikybrofc/logger-module",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Módulo de log moderno em TypeScript usando Winston e Rotação de Arquivos.",
   "main": "dist/logger.js",
   "types": "dist/logger.d.ts",
