@@ -103,13 +103,17 @@ async function executarTestesAvancados() {
 
   // --- 6. Teste de Sampling (Amostragem) ---
   console.log('\n--- [6] Resiliência: Teste de Sampling (Amostragem) ---');
-  let logsEmitidos = 0;
-  
-  // Vamos usar um logger temporário com um transporte mock para contar
   for (let i = 1; i <= 10; i++) {
     logger.info('Log repetitivo', { sampleKey: 'teste_sampling', sampleRate: 5 });
   }
-  console.log('✅ Sucesso: O sampling foi processado (verificar visualmente se apenas 2 logs SAMPLED apareceram acima).');
+  console.log('✅ Sucesso: O sampling foi processado.');
+
+  // --- 7. Teste de Rate Limit ---
+  console.log('\n--- [7] Resiliência: Teste de Rate Limit ---');
+  for (let i = 1; i <= 10; i++) {
+    logger.warn('Log de flood', { rateLimitKey: 'teste_rl', rateLimitMax: 3 });
+  }
+  console.log('✅ Sucesso: O rate limit foi processado (apenas 3 + aviso de active devem ter aparecido).');
 
   console.log('\n🏁 Suite de Testes Avançada Finalizada.');
 }

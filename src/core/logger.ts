@@ -25,7 +25,7 @@ import {
 
 import { getRequestId } from '../context/storage.js';
 import { redigirDados } from './redact.js';
-import { amostrarLogs } from './sampling.js';
+import { controlarTrafego } from './traffic-control.js';
 
 // --- Formatação ---
 
@@ -36,7 +36,7 @@ const injetarContexto = winston.format((info) => {
 });
 
 const formatoConsole = winston.format.combine(
-  amostrarLogs(),
+  controlarTrafego(),
   injetarContexto(),
   winston.format.timestamp({ format: () => new Date().toISOString() }),
   winston.format.splat(),
@@ -70,7 +70,7 @@ const formatoConsole = winston.format.combine(
 );
 
 const formatoArquivo = winston.format.combine(
-  amostrarLogs(),
+  controlarTrafego(),
   injetarContexto(),
   winston.format.timestamp(),
   winston.format.splat(),

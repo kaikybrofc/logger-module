@@ -68,6 +68,14 @@ export const env = cleanEnv(process.env, {
     default: '1.0', 
     desc: 'Taxa global de amostragem (0.0 a 1.0). 1.0 significa 100% dos logs.' 
   }),
+  LOG_RATE_LIMIT_MAX: str({ 
+    default: '100', 
+    desc: 'Máximo de logs permitidos por janela para uma mesma chave.' 
+  }),
+  LOG_RATE_LIMIT_WINDOW_MS: str({ 
+    default: '60000', 
+    desc: 'Tamanho da janela de tempo em milissegundos para o rate limit.' 
+  }),
   LOG_SENSITIVE_FILE: str({ default: '' }),
   name: str({ default: undefined }),
   PM2_INSTANCE_ID: str({ default: undefined }),
