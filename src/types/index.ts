@@ -3,7 +3,7 @@ import winston from 'winston';
 /**
  * Níveis de log suportados pelo sistema, incluindo níveis RFC5424 e personalizados.
  */
-export type NivelLog = 
+export type NivelLogPadrao = 
   | 'fatal' 
   | 'security'
   | 'audit'
@@ -18,8 +18,9 @@ export type NivelLog =
   | 'http' 
   | 'verbose' 
   | 'debug' 
-  | 'silly'
-  | (string & {}); // Permite níveis dinâmicos via env
+  | 'silly';
+
+export type NivelLog = NivelLogPadrao | string;
 
 /**
  * Interface estendida do Winston Logger para incluir métodos tipados e dinâmicos.
@@ -40,9 +41,8 @@ export interface LoggerInstancia extends winston.Logger {
   verbose: winston.LeveledLogMethod;
   debug: winston.LeveledLogMethod;
   silly: winston.LeveledLogMethod;
-  [customLevel: string]: winston.LeveledLogMethod | any; // Assinatura de índice para níveis dinâmicos
+  [customLevel: string]: winston.LeveledLogMethod | any;
 }
-
 /**
  * Metadados padrão para cada linha de log.
  */

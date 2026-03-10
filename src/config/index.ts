@@ -64,6 +64,10 @@ export const env = cleanEnv(process.env, {
     choices: ['pretty', 'json'], 
     default: process.env.NODE_ENV === 'production' ? 'json' : 'pretty',
   }),
+  LOG_SAMPLING_RATE: str({ 
+    default: '1.0', 
+    desc: 'Taxa global de amostragem (0.0 a 1.0). 1.0 significa 100% dos logs.' 
+  }),
   LOG_SENSITIVE_FILE: str({ default: '' }),
   name: str({ default: undefined }),
   PM2_INSTANCE_ID: str({ default: undefined }),
@@ -85,9 +89,9 @@ function obterNiveisCompletos() {
   return niveis;
 }
 
-export const NIVEIS_LOG = obterNiveisCompletos() as Record<NivelLog, number>;
-export const NOMES_NIVEIS = Object.keys(NIVEIS_LOG) as NivelLog[];
-export const ANSI_COLORS = { ...CORES_ESTATICAS };
+export const NIVEIS_LOG = obterNiveisCompletos() as Record<string, number>;
+export const NOMES_NIVEIS = Object.keys(NIVEIS_LOG);
+export const ANSI_COLORS: Record<string, string> = { ...CORES_ESTATICAS };
 
 
 export const NIVEL_LOG_PADRAO = env.LOG_LEVEL as NivelLog;

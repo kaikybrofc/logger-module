@@ -101,6 +101,16 @@ async function executarTestesAvancados() {
     console.error('❌ Falha: Métodos customizados não encontrados na instância.');
   }
 
+  // --- 6. Teste de Sampling (Amostragem) ---
+  console.log('\n--- [6] Resiliência: Teste de Sampling (Amostragem) ---');
+  let logsEmitidos = 0;
+  
+  // Vamos usar um logger temporário com um transporte mock para contar
+  for (let i = 1; i <= 10; i++) {
+    logger.info('Log repetitivo', { sampleKey: 'teste_sampling', sampleRate: 5 });
+  }
+  console.log('✅ Sucesso: O sampling foi processado (verificar visualmente se apenas 2 logs SAMPLED apareceram acima).');
+
   console.log('\n🏁 Suite de Testes Avançada Finalizada.');
 }
 

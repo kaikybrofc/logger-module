@@ -25,6 +25,7 @@ import {
 
 import { getRequestId } from '../context/storage.js';
 import { redigirDados } from './redact.js';
+import { amostrarLogs } from './sampling.js';
 
 // --- Formatação ---
 
@@ -35,6 +36,7 @@ const injetarContexto = winston.format((info) => {
 });
 
 const formatoConsole = winston.format.combine(
+  amostrarLogs(),
   injetarContexto(),
   winston.format.timestamp({ format: () => new Date().toISOString() }),
   winston.format.splat(),
@@ -48,8 +50,9 @@ const formatoConsole = winston.format.combine(
     const parteLabel = label ? ` [${label}]` : '';
     const parteRequestId = requestId ? ` [ID:${requestId}]` : '';
     
-    const cor = ANSI_COLORS[level as string] || '';
-    const levelColorido = `${cor}${level}${ANSI_COLORS.reset}`;
+    const levelStr = String(level);
+    const cor = ANSI_COLORS[levelStr] || '';
+    const levelColorido = `${cor}${levelStr}${ANSI_COLORS.reset}`;
     
     const metaParaImprimir = { ...(metadata as Record<string, any>) };
     if (label) delete metaParaImprimir.label;
@@ -67,6 +70,7 @@ const formatoConsole = winston.format.combine(
 );
 
 const formatoArquivo = winston.format.combine(
+  amostrarLogs(),
   injetarContexto(),
   winston.format.timestamp(),
   winston.format.splat(),
