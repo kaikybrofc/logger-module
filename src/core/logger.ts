@@ -19,7 +19,8 @@ import {
   ID_INSTANCIA, 
   NOME_ECOSSISTEMA, 
   AMBIENTE_NODE, 
-  PADROES_LOG 
+  PADROES_LOG,
+  env
 } from '../config/index.js';
 
 import { getRequestId } from '../context/storage.js';
@@ -91,7 +92,7 @@ const obterDefinicoesTransportePadrao = (nivel: NivelLog): DefinicaoTransporte[]
     type: 'console',
     options: {
       level: nivel,
-      format: formatoConsole,
+      format: env.LOG_FORMAT === 'json' ? formatoArquivo : formatoConsole,
       handleExceptions: true,
       handleRejections: true,
     },

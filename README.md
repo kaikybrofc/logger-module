@@ -6,12 +6,12 @@ Um módulo de log moderno, robusto e de alta performance para aplicações Node.
 
 - **Arquitetura Modular**: Estrutura limpa e escalável separando tipos, configurações, contexto e núcleo.
 - **Alta Performance**: Utiliza o motor `fast-redact` para mascaramento de dados extremamente rápido (até 6 níveis de profundidade).
+- **Formatos Dinâmicos**: Alterna automaticamente entre formato **Humano (Pretty)** em desenvolvimento e **JSON Estruturado** em produção.
 - **Rastreamento Automático (RequestId)**: Injeção automática de IDs de rastreamento em todos os logs de um contexto assíncrono.
+- **Resiliência Avançada**: Proteção nativa contra referências circulares em objetos e suporte a `BigInt`.
+- **Redação Massiva de Dados**: Proteção automática para mais de 200 chaves sensíveis (PII, Financeiro, Saúde, Credenciais).
+- **Dicionário Customizável**: Suporte para carregar chaves sensíveis extras via arquivo externo (JSON, CSV ou TXT).
 - **Níveis RFC5424 Estendidos**: Suporte a 13 níveis de log, de `fatal` a `silly`.
-- **Redação Massiva de Dados**: Proteção automática para mais de 200 chaves sensíveis pré-configuradas.
-- **Dicionário Customizável**: Suporte para adicionar suas próprias chaves sensíveis via arquivo externo (JSON, CSV ou TXT).
-- **Rotação de Arquivos**: Gerenciamento automático de arquivos de log por data com compressão.
-- **Segurança de Release**: Pipeline de release em bash com rollback automático e sincronização GitHub/NPM.
 
 ## 🚀 Instalação
 
@@ -27,8 +27,9 @@ O módulo é configurado via variáveis de ambiente.
 |----------|-----------|---------|
 | `NODE_ENV` | Ambiente (`development`, `production`, `test`) | `development` |
 | `LOG_LEVEL` | Nível mínimo de exibição | `debug` (dev) / `info` (prod) |
-| `ECOSYSTEM_NAME` | Nome do serviço para os logs | `sistema` |
-| `LOG_SENSITIVE_FILE` | Caminho para arquivo (.json, .csv, .txt) com chaves sensíveis extras | - |
+| `LOG_FORMAT` | Formato do console (`pretty` ou `json`) | `json` (prod) / `pretty` (dev) |
+| `LOG_SENSITIVE_FILE` | Caminho para arquivo (.json, .csv, .txt) com chaves extras | - |
+| `ECOSYSTEM_NAME` | Nome do serviço para identificar nos logs | `sistema` |
 
 ## 📖 Como Usar
 
@@ -37,38 +38,31 @@ O módulo é configurado via variáveis de ambiente.
 import logger from '@kaikybrofc/logger-module';
 
 logger.info('Servidor iniciado');
-logger.success('Pagamento processado', { transacaoId: 'abc' });
+logger.success('Operação concluída');
 ```
+
+### Alternância de Formatos
+O logger se adapta ao ambiente onde está rodando:
+
+- **Em Desenvolvimento (`LOG_FORMAT=pretty`)**:
+  `[2026-03-10...] [info] [servico] [local] - Mensagem de teste { meta: 'dado' }`
+- **Em Produção (`LOG_FORMAT=json`)**:
+  `{"level":"info","message":"Mensagem","service":"servico","timestamp":"..."}`
 
 ### Rastreabilidade com RequestId
 ```typescript
 import logger, { runWithContext } from '@kaikybrofc/logger-module';
 
 runWithContext(() => {
-  logger.info('Iniciando processamento'); // [ID: uuid...] automático
+  logger.info('Processando pedido'); // Inclui [ID: uuid...] automaticamente
 }, 'ID-OPCIONAL');
 ```
 
-### Configurando Chaves Sensíveis Extras
-Você pode expandir a proteção do logger criando um arquivo (ex: `keys.txt`):
-```text
-minha_chave_secreta
-token_projeto_x
-```
-E definindo no seu `.env`:
-```env
-LOG_SENSITIVE_FILE=keys.txt
-```
-
-### Redação Automática
-O logger irá mascarar qualquer chave presente no dicionário (padrão ou customizado):
+### Segurança de Dados (Redação)
+O logger mascara automaticamente chaves sensíveis:
 ```typescript
-logger.info('Dados do usuário', {
-  usuario: {
-    cpf: '123.456.789-00', // [REDACTED]
-    password: '123'         // [REDACTED]
-  }
-});
+logger.info('Dados sensíveis', { password: '123', cpf: '000.000...' });
+// Resultado: { "password": "[REDACTED]", "cpf": "[REDACTED]" }
 ```
 
 ## 📄 Licença

@@ -55,6 +55,11 @@ export const env = cleanEnv(process.env, {
     default: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
   }),
   ECOSYSTEM_NAME: str({ default: 'sistema' }),
+  LOG_FORMAT: str({ 
+    choices: ['pretty', 'json'], 
+    default: process.env.NODE_ENV === 'production' ? 'json' : 'pretty',
+    desc: 'Formato de saída do log no console'
+  }),
   LOG_SENSITIVE_FILE: str({ default: '', desc: 'Caminho para arquivo customizado com chaves sensíveis' }),
   name: str({ default: undefined }),
   PM2_INSTANCE_ID: str({ default: undefined }),
