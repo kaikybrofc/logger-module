@@ -18,7 +18,16 @@ export const redigirDados = winston.format((info) => {
     if (typeof obj === 'bigint') return obj.toString();
     if (obj instanceof Date) return obj.toISOString();
     if (obj instanceof RegExp) return obj.toString();
-    if (obj instanceof Error) return { message: obj.message, stack: obj.stack, ...obj };
+    if (obj instanceof Error) {
+      const errorObj: any = { message: obj.message, stack: obj.stack };
+      // Copia outras propriedades que o Erro possa ter (ex: code, status, etc)
+      for (const key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key) && key !== 'message' && key !== 'stack') {
+          errorObj[key] = processarERedigir((obj as any)[key]);
+        }
+      }
+      return errorObj;
+    }
 
     if (seen.has(obj)) return '[Circular]';
     

@@ -13,16 +13,22 @@ interface TrafficState {
 
 const trafficState = new Map<string, TrafficState>();
 
-// Intervalo para limpeza do Map (cada 5 minutos)
+// Intervalo para limpeza do Map (cada minuto para ser mais responsivo)
 setInterval(() => {
   const now = Date.now();
+  const baseWindow = Number(env.LOG_RATE_LIMIT_WINDOW_MS);
+  
   for (const [key, state] of trafficState.entries()) {
-    // Se não foi resetado nos últimos 10 minutos, removemos
-    if (now - state.lastReset > 600000) {
+    // Calculamos o tempo de expiração seguro: 
+    // O maior entre a janela padrão e 10 minutos (600.000ms), 
+    // garantindo que não apaguemos algo ainda ativo em janelas longas.
+    const ttlMs = Math.max(baseWindow * 1.1, 600000); 
+
+    if (now - state.lastReset > ttlMs) {
       trafficState.delete(key);
     }
   }
-}, 300000).unref(); // .unref() permite que o processo termine se este for o único timer ativo
+}, 60000).unref(); // .unref() permite que o processo termine se este for o único timer ativo
 
 /**
  * Formato Winston para controle de tráfego (Sampling + Rate Limit).
