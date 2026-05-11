@@ -16,7 +16,7 @@ const trafficState = new Map<string, TrafficState>();
 // Intervalo para limpeza do Map (cada minuto para ser mais responsivo)
 setInterval(() => {
   const now = Date.now();
-  const baseWindow = Number(env.LOG_RATE_LIMIT_WINDOW_MS);
+  const baseWindow = env.LOG_RATE_LIMIT_WINDOW_MS;
   
   for (const [key, state] of trafficState.entries()) {
     // Calculamos o tempo de expiração seguro: 
@@ -41,8 +41,8 @@ export const controlarTrafego = winston.format((info) => {
   const rlKey = rateLimitKey || sampleKey; // Se não houver RL Key, tenta usar a do sample
   if (rlKey && typeof rlKey === 'string') {
     let state = trafficState.get(rlKey);
-    const windowMs = Number(rateLimitWindow) || Number(env.LOG_RATE_LIMIT_WINDOW_MS);
-    const max = Number(rateLimitMax) || Number(env.LOG_RATE_LIMIT_MAX);
+    const windowMs = Number(rateLimitWindow) || env.LOG_RATE_LIMIT_WINDOW_MS;
+    const max = Number(rateLimitMax) || env.LOG_RATE_LIMIT_MAX;
 
     if (!state || (now - state.lastReset) > windowMs) {
       state = { count: 0, windowCount: 0, lastReset: now, isThrottling: false };
@@ -84,7 +84,7 @@ export const controlarTrafego = winston.format((info) => {
   }
 
   // 3. Amostragem Global Randômica
-  const globalRate = parseFloat(env.LOG_SAMPLING_RATE);
+  const globalRate = env.LOG_SAMPLING_RATE;
   if (globalRate < 1.0 && Math.random() > globalRate) {
     return false;
   }

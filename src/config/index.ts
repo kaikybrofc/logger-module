@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { cleanEnv, str, bool } from 'envalid';
+import { cleanEnv, str, bool, num } from 'envalid';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { NivelLog } from '../types/index.js';
@@ -64,16 +64,16 @@ export const env = cleanEnv(process.env, {
     choices: ['pretty', 'json'], 
     default: process.env.NODE_ENV === 'production' ? 'json' : 'pretty',
   }),
-  LOG_SAMPLING_RATE: str({ 
-    default: '1.0', 
+  LOG_SAMPLING_RATE: num({
+    default: 1.0,
     desc: 'Taxa global de amostragem (0.0 a 1.0). 1.0 significa 100% dos logs.' 
   }),
-  LOG_RATE_LIMIT_MAX: str({ 
-    default: '100', 
+  LOG_RATE_LIMIT_MAX: num({
+    default: 100,
     desc: 'Máximo de logs permitidos por janela para uma mesma chave.' 
   }),
-  LOG_RATE_LIMIT_WINDOW_MS: str({ 
-    default: '60000', 
+  LOG_RATE_LIMIT_WINDOW_MS: num({
+    default: 60000,
     desc: 'Tamanho da janela de tempo em milissegundos para o rate limit.' 
   }),
   LOG_SENSITIVE_FILE: str({ default: '' }),
