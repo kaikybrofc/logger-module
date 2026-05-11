@@ -76,6 +76,14 @@ export const env = cleanEnv(process.env, {
     default: 60000,
     desc: 'Tamanho da janela de tempo em milissegundos para o rate limit.' 
   }),
+  LOG_BATCH_SIZE: num({
+    default: 100,
+    desc: 'Quantidade de linhas acumuladas em memória antes de flush em lote nos transportes de arquivo.',
+  }),
+  LOG_FLUSH_INTERVAL_MS: num({
+    default: 1000,
+    desc: 'Intervalo máximo para flush do buffer em lote nos transportes de arquivo.',
+  }),
   LOG_SENSITIVE_FILE: str({ default: '' }),
   
   // Loki

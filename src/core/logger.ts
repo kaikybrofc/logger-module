@@ -30,6 +30,8 @@ import { getRequestId } from '../context/storage.js';
 import { redigirDados } from './redact.js';
 import { controlarTrafego } from './traffic-control.js';
 import { AuditTransport } from './audit.js';
+import { BatchedFileTransport } from './batched-file-transport.js';
+import { OpenTelemetryTransport } from './otel-transport.js';
 
 // --- Formatação ---
 
@@ -103,27 +105,27 @@ const obterDefinicoesTransportePadrao = (nivel: NivelLog): DefinicaoTransporte[]
       },
     },
     {
-      type: 'dailyRotateFile',
+      type: 'batchedFile',
       options: {
         filename: path.join(PADROES_LOG.DIR_LOGS, PADROES_LOG.NOME_ARQUIVO_APP),
         level: nivel,
         format: formatoArquivo,
-        datePattern: PADROES_LOG.PADRAO_DATA,
-        zippedArchive: PADROES_LOG.ARQUIVO_ZIPADO,
-        maxSize: PADROES_LOG.TAMANHO_MAX_APP,
-        maxFiles: PADROES_LOG.DIAS_MAX_APP,
+        batchSize: env.LOG_BATCH_SIZE,
+        flushIntervalMs: env.LOG_FLUSH_INTERVAL_MS,
+        rotateOnSignal: true,
+        signal: 'SIGUSR1',
       },
     },
     {
-      type: 'dailyRotateFile',
+      type: 'batchedFile',
       options: {
         filename: path.join(PADROES_LOG.DIR_LOGS, PADROES_LOG.NOME_ARQUIVO_ERRO),
         level: 'error',
         format: formatoArquivo,
-        datePattern: PADROES_LOG.PADRAO_DATA,
-        zippedArchive: PADROES_LOG.ARQUIVO_ZIPADO,
-        maxSize: PADROES_LOG.TAMANHO_MAX_ERRO,
-        maxFiles: PADROES_LOG.DIAS_MAX_ERRO,
+        batchSize: env.LOG_BATCH_SIZE,
+        flushIntervalMs: env.LOG_FLUSH_INTERVAL_MS,
+        rotateOnSignal: true,
+        signal: 'SIGUSR1',
         handleExceptions: true,
         handleRejections: true,
       },
@@ -192,6 +194,8 @@ export const criarInstanciaLogger = (opcoes: OpcoesLogger = {}): LoggerInstancia
       try {
         if (def.type === 'console') return new winston.transports.Console(def.options);
         if (def.type === 'dailyRotateFile') return new DailyRotateFile(def.options);
+        if (def.type === 'batchedFile') return new BatchedFileTransport(def.options);
+        if (def.type === 'otel') return new OpenTelemetryTransport(def.options);
         
         // Transportes opcionais com tratamento de erro caso as bibliotecas não existam
         if (def.type === 'loki') {

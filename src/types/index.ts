@@ -66,10 +66,13 @@ export interface OpcoesLogger {
 }
 
 /**
- * Definição estruturada para transportes (Console, Arquivo, Loki, Elastic, Datadog).
+ * Definição estruturada para transportes suportados pela biblioteca.
+ *
+ * Inclui transportes nativos (`console`, `dailyRotateFile`, `batchedFile`,
+ * `audit`, `otel`) e integrações opcionais (`loki`, `elasticsearch`, `datadog`).
  */
 export interface DefinicaoTransporte {
-  type: 'console' | 'dailyRotateFile' | 'loki' | 'elasticsearch' | 'datadog' | 'audit';
+  type: 'console' | 'dailyRotateFile' | 'batchedFile' | 'loki' | 'elasticsearch' | 'datadog' | 'audit' | 'otel';
   options: any;
 }
 
