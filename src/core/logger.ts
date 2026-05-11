@@ -187,27 +187,21 @@ export const criarInstanciaLogger = (opcoes: OpcoesLogger = {}): LoggerInstancia
         
         // Transportes opcionais com tratamento de erro caso as bibliotecas não existam
         if (def.type === 'loki') {
-          // @ts-ignore
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
           const LokiTransport = require('winston-loki');
           return new LokiTransport(def.options);
         }
         if (def.type === 'elasticsearch') {
-          // @ts-ignore
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
           const { ElasticsearchTransport } = require('winston-elasticsearch');
           return new ElasticsearchTransport(def.options);
         }
         if (def.type === 'datadog') {
-          // @ts-ignore
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
           const DatadogTransport = require('datadog-winston');
           return new DatadogTransport(def.options);
         }
         if (def.type === 'audit') {
           return new AuditTransport(def.options);
         }
-      } catch (err) {
+      } catch {
         console.warn(`[LOGGER] Falha ao carregar transporte '${def.type}'. Certifique-se de que a biblioteca necessária está instalada.`);
         return null;
       }

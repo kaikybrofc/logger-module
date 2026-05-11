@@ -28,7 +28,9 @@
     "dev": "tsx src/index.ts",
     "test": "for f in test/*.test.ts; do echo \"Running $f...\"; tsx \"$f\" || exit 1; done",
     "prepublishOnly": "npm run build",
-    "release": "./scripts/release.sh"
+    "release": "./scripts/release.sh",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
   },
   "files": [
     "dist"
@@ -47,6 +49,10 @@
     "@types/fast-redact": "^3.0.4",
     "@types/node": "^20.11.24",
     "tsx": "^4.7.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "eslint": "^9.25.0",
+    "@eslint/js": "^9.25.0",
+    "typescript-eslint": "^8.30.1",
+    "prettier": "^3.3.3"
   }
 }

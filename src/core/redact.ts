@@ -1,6 +1,5 @@
 import winston from 'winston';
 import { SENSITIVE_KEYS } from '../config/redaction.js';
-import util from 'node:util';
 
 const SENSITIVE_SET = new Set(SENSITIVE_KEYS);
 
@@ -57,7 +56,7 @@ export const redigirDados = winston.format((info) => {
 
   try {
     return processarERedigir(info);
-  } catch (erro) {
+  } catch {
     return info;
   }
 });

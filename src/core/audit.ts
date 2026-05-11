@@ -34,7 +34,7 @@ export class AuditTransport extends Transport {
 
       const logEntry = JSON.parse(lastLine);
       return logEntry.hash || '0'.repeat(64);
-    } catch (e) {
+    } catch {
       return '0'.repeat(64);
     }
   }
@@ -45,7 +45,8 @@ export class AuditTransport extends Transport {
   private calculateHash(data: any, prevHash: string): string {
     const hash = crypto.createHash('sha256');
     // Removemos o campo hash se existir para não causar circularidade
-    const { hash: _, ...rest } = data;
+    const rest = { ...data };
+    delete rest.hash;
     hash.update(JSON.stringify(rest) + prevHash);
     return hash.digest('hex');
   }
