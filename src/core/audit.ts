@@ -11,11 +11,22 @@ import { PADROES_LOG } from '../config/index.js';
 export class AuditTransport extends Transport {
   private filePath: string;
   private lastHash: string;
+  private stream: fs.WriteStream;
+  private queue: string[] = [];
+  private flushingQueue = false;
+  private waitingDrain = false;
 
   constructor(opts?: any) {
     super(opts);
     this.filePath = path.join(PADROES_LOG.DIR_LOGS, PADROES_LOG.NOME_ARQUIVO_AUDITORIA);
     this.lastHash = this.initializeLastHash();
+    this.stream = this.createWriteStream();
+  }
+
+  private createWriteStream(): fs.WriteStream {
+    const stream = fs.createWriteStream(this.filePath, { flags: 'a' });
+    stream.on('error', (error) => this.emit('error', error));
+    return stream;
   }
 
   /**
@@ -51,6 +62,34 @@ export class AuditTransport extends Transport {
     return hash.digest('hex');
   }
 
+  private enqueue(line: string): void {
+    this.queue.push(line);
+    this.flushQueue();
+  }
+
+  private flushQueue(): void {
+    if (this.flushingQueue || this.waitingDrain) return;
+    this.flushingQueue = true;
+
+    while (this.queue.length > 0) {
+      const nextLine = this.queue[0];
+      const canContinue = this.stream.write(nextLine);
+      this.queue.shift();
+
+      if (!canContinue) {
+        this.waitingDrain = true;
+        this.stream.once('drain', () => {
+          this.waitingDrain = false;
+          this.flushingQueue = false;
+          this.flushQueue();
+        });
+        return;
+      }
+    }
+
+    this.flushingQueue = false;
+  }
+
   log(info: any, callback: () => void) {
     setImmediate(() => this.emit('logged', info));
 
@@ -81,7 +120,15 @@ export class AuditTransport extends Transport {
 
     const logLine = JSON.stringify(auditEntry) + '\n';
     
-    fs.appendFileSync(this.filePath, logLine);
+    this.enqueue(logLine);
     callback();
+  }
+
+  close(): void {
+    if (this.queue.length > 0) {
+      this.flushQueue();
+    }
+    this.stream.end();
+    super.close?.();
   }
 }
