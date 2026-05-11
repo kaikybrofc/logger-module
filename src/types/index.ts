@@ -73,11 +73,21 @@ export interface DefinicaoTransporte {
   options: any;
 }
 
+/**
+ * Assinatura do middleware HTTP da biblioteca para Express/Fastify.
+ */
 export type MiddlewareLoggerHttp = (req: any, resOrReply: any, next?: (err?: unknown) => void) => void;
 
+/**
+ * Opções do decorador `@LogMethod`.
+ */
 export interface LogMethodOptions {
+  /** Nível utilizado nos logs de entrada e saída. */
   level?: NivelLog;
+  /** Inclui argumentos da chamada no log de entrada. */
   logArgs?: boolean;
+  /** Inclui valor retornado no log de saída. */
   logResult?: boolean;
+  /** Logger customizado; quando omitido usa logger padrão da biblioteca. */
   logger?: LoggerInstancia;
 }

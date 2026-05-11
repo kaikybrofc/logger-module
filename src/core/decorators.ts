@@ -1,8 +1,14 @@
 import { criarInstanciaLogger } from './logger.js';
 import { LoggerInstancia, LogMethodOptions, NivelLog } from '../types/index.js';
 
+/**
+ * Logger padrão usado pelo decorador quando nenhum logger é informado nas opções.
+ */
 const decoratorDefaultLogger = criarInstanciaLogger();
 
+/**
+ * Resolve o método de log pelo nível configurado, com fallback para `logger.info`.
+ */
 function getLogMethod(
   logger: LoggerInstancia,
   level: NivelLog,
@@ -22,6 +28,9 @@ function getLogMethod(
  * @LogMethod({ level: 'info', logArgs: true, logResult: false })
  * async criarUsuario(dto: CreateUserDto) { ... }
  * ```
+ *
+ * @param options Configurações de nível e payload dos logs automáticos.
+ * @returns Method decorator compatível com métodos síncronos e assíncronos.
  */
 export function LogMethod(options: LogMethodOptions = {}): MethodDecorator {
   const {
@@ -91,4 +100,3 @@ export function LogMethod(options: LogMethodOptions = {}): MethodDecorator {
     return descriptor;
   };
 }
-

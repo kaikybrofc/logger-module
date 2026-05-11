@@ -5,6 +5,9 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
+  "bin": {
+    "logger-module": "dist/cli.js"
+  },
   "author": "kaikybrofc",
   "license": "MIT",
   "repository": {
