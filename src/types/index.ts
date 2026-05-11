@@ -72,3 +72,5 @@ export interface DefinicaoTransporte {
   type: 'console' | 'dailyRotateFile' | 'loki' | 'elasticsearch' | 'datadog' | 'audit';
   options: any;
 }
+
+export type MiddlewareLoggerHttp = (req: any, resOrReply: any, next?: (err?: unknown) => void) => void;
