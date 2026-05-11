@@ -74,3 +74,10 @@ export interface DefinicaoTransporte {
 }
 
 export type MiddlewareLoggerHttp = (req: any, resOrReply: any, next?: (err?: unknown) => void) => void;
+
+export interface LogMethodOptions {
+  level?: NivelLog;
+  logArgs?: boolean;
+  logResult?: boolean;
+  logger?: LoggerInstancia;
+}
