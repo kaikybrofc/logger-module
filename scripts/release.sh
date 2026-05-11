@@ -187,7 +187,10 @@ jq ".version = \"$NEW_VERSION\"" package.json > package.tmp.json && mv package.t
 
 tar -czf release_assets.tar.gz dist/ package.json
 
-git add package.json package-lock.json
+git add package.json
+if [ -f package-lock.json ] && git ls-files --error-unmatch package-lock.json >/dev/null 2>&1; then
+  git add package-lock.json
+fi
 git commit -m "chore(release): versão $NEW_VERSION"
 RELEASE_COMMIT_CREATED=true
 
