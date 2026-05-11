@@ -17,18 +17,31 @@ export const redigirDados = winston.format((info) => {
     if (typeof obj === 'bigint') return obj.toString();
     if (obj instanceof Date) return obj.toISOString();
     if (obj instanceof RegExp) return obj.toString();
+    if (seen.has(obj)) return '[Circular]';
+
     if (obj instanceof Error) {
-      const errorObj: any = { message: obj.message, stack: obj.stack };
+      const errorObj: any = { name: obj.name, message: obj.message, stack: obj.stack };
+      seen.set(obj, errorObj);
+
+      // Error.cause pode ser não-enumerável (ES2022), então tratamos explicitamente.
+      if ('cause' in obj && (obj as any).cause !== undefined) {
+        errorObj.cause = processarERedigir((obj as any).cause);
+      }
+
       // Copia outras propriedades que o Erro possa ter (ex: code, status, etc)
       for (const key in obj) {
-        if (Object.prototype.hasOwnProperty.call(obj, key) && key !== 'message' && key !== 'stack') {
+        if (
+          Object.prototype.hasOwnProperty.call(obj, key) &&
+          key !== 'name' &&
+          key !== 'message' &&
+          key !== 'stack' &&
+          key !== 'cause'
+        ) {
           errorObj[key] = processarERedigir((obj as any)[key]);
         }
       }
       return errorObj;
     }
-
-    if (seen.has(obj)) return '[Circular]';
     
     const isArray = Array.isArray(obj);
     const result = isArray ? [] : {};

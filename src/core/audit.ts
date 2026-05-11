@@ -156,6 +156,59 @@ export class AuditTransport extends Transport {
     this.flushQueue();
   }
 
+  private normalizeForJson(data: any, seen = new WeakMap<object, any>): any {
+    if (data === null || data === undefined) return data;
+    if (typeof data === 'bigint') return data.toString();
+    if (typeof data !== 'object') return data;
+    if (data instanceof Date) return data.toISOString();
+    if (data instanceof RegExp) return data.toString();
+
+    if (seen.has(data)) return '[Circular]';
+
+    if (data instanceof Error) {
+      const errorObj: Record<string, unknown> = {
+        name: data.name,
+        message: data.message,
+        stack: data.stack,
+      };
+      seen.set(data, errorObj);
+
+      if ('cause' in data && (data as any).cause !== undefined) {
+        errorObj.cause = this.normalizeForJson((data as any).cause, seen);
+      }
+
+      for (const key in data) {
+        if (
+          Object.prototype.hasOwnProperty.call(data, key) &&
+          key !== 'name' &&
+          key !== 'message' &&
+          key !== 'stack' &&
+          key !== 'cause'
+        ) {
+          errorObj[key] = this.normalizeForJson((data as any)[key], seen);
+        }
+      }
+
+      return errorObj;
+    }
+
+    const result: Record<string, unknown> | unknown[] = Array.isArray(data) ? [] : {};
+    seen.set(data, result);
+
+    for (const key in data) {
+      if (Object.prototype.hasOwnProperty.call(data, key)) {
+        (result as any)[key] = this.normalizeForJson(data[key], seen);
+      }
+    }
+
+    const symbols = Object.getOwnPropertySymbols(data);
+    for (const symbol of symbols) {
+      (result as any)[symbol] = this.normalizeForJson((data as any)[symbol], seen);
+    }
+
+    return result;
+  }
+
   private flushQueue(): void {
     if (this.flushingQueue || this.waitingDrain) return;
     this.flushingQueue = true;
@@ -190,11 +243,12 @@ export class AuditTransport extends Transport {
       return callback();
     }
 
+    const normalizedInfo = this.normalizeForJson(info);
     const prevHash = this.lastHash;
-    const currentHash = this.calculateHash(info, prevHash);
+    const currentHash = this.calculateHash(normalizedInfo, prevHash);
     
     const auditEntry = {
-      ...info,
+      ...normalizedInfo,
       prevHash,
       hash: currentHash,
       _audit_ver: '1.0'
