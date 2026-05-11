@@ -174,6 +174,14 @@ const obterDefinicoesTransportePadrao = (nivel: NivelLog): DefinicaoTransporte[]
 export const criarInstanciaLogger = (opcoes: OpcoesLogger = {}): LoggerInstancia => {
   garantirDiretorioLogs();
   const nivelEfetivo = opcoes.level || NIVEL_LOG_PADRAO;
+  let loggerInstancia: LoggerInstancia | null = null;
+  const onIntegrityViolation = (message: string, metadata: Record<string, unknown>) => {
+    if (loggerInstancia && typeof loggerInstancia.security === 'function') {
+      loggerInstancia.security(`[AUDIT-INTEGRITY] ${message}`, metadata);
+      return;
+    }
+    console.error(`[AUDIT-INTEGRITY] ${message}`, metadata);
+  };
 
   let transportes: winston.transport[];
   if (opcoes.transports) {
@@ -199,7 +207,10 @@ export const criarInstanciaLogger = (opcoes: OpcoesLogger = {}): LoggerInstancia
           return new DatadogTransport(def.options);
         }
         if (def.type === 'audit') {
-          return new AuditTransport(def.options);
+          return new AuditTransport({
+            ...def.options,
+            onIntegrityViolation,
+          });
         }
       } catch {
         console.warn(`[LOGGER] Falha ao carregar transporte '${def.type}'. Certifique-se de que a biblioteca necessária está instalada.`);
@@ -211,10 +222,10 @@ export const criarInstanciaLogger = (opcoes: OpcoesLogger = {}): LoggerInstancia
 
   // Adiciona transporte de auditoria imutável se habilitado
   if (env.LOG_AUDIT_IMMUTABLE) {
-    transportes.push(new AuditTransport({ level: 'audit' }));
+    transportes.push(new AuditTransport({ level: 'audit', onIntegrityViolation }));
   }
 
-  return winston.createLogger({
+  loggerInstancia = winston.createLogger({
     level: nivelEfetivo,
     levels: NIVEIS_LOG,
     format: winston.format.combine(
@@ -232,4 +243,6 @@ export const criarInstanciaLogger = (opcoes: OpcoesLogger = {}): LoggerInstancia
     transports: transportes,
     exitOnError: false,
   }) as LoggerInstancia;
+
+  return loggerInstancia;
 };

@@ -15,12 +15,17 @@ export class AuditTransport extends Transport {
   private queue: string[] = [];
   private flushingQueue = false;
   private waitingDrain = false;
+  private integrityCheckEntries: number;
+  private onIntegrityViolation?: (message: string, metadata: Record<string, unknown>) => void;
 
   constructor(opts?: any) {
     super(opts);
     this.filePath = path.join(PADROES_LOG.DIR_LOGS, PADROES_LOG.NOME_ARQUIVO_AUDITORIA);
+    this.integrityCheckEntries = Number(opts?.integrityCheckEntries) || 500;
+    this.onIntegrityViolation = opts?.onIntegrityViolation;
     this.lastHash = this.initializeLastHash();
     this.stream = this.createWriteStream();
+    setImmediate(() => this.verifyChainOnBoot());
   }
 
   private createWriteStream(): fs.WriteStream {
@@ -60,6 +65,90 @@ export class AuditTransport extends Transport {
     delete rest.hash;
     hash.update(JSON.stringify(rest) + prevHash);
     return hash.digest('hex');
+  }
+
+  private verifyChainOnBoot(): void {
+    if (!fs.existsSync(this.filePath)) return;
+
+    try {
+      const content = fs.readFileSync(this.filePath, 'utf8').trim();
+      if (!content) return;
+
+      const lines = content.split('\n').filter(Boolean);
+      const total = lines.length;
+      const start = Math.max(0, total - this.integrityCheckEntries);
+      const tail = lines.slice(start);
+
+      let prevHash = start > 0 ? this.getHashFromLine(lines[start - 1]) : '0'.repeat(64);
+      let hasTamper = false;
+
+      for (let i = 0; i < tail.length; i++) {
+        const absoluteLine = start + i + 1;
+        const parsed = this.safeParseLine(tail[i]);
+
+        if (!parsed) {
+          hasTamper = true;
+          this.reportIntegrityViolation('Linha de auditoria inválida (JSON malformado).', { line: absoluteLine });
+          break;
+        }
+
+        if (parsed.prevHash !== prevHash) {
+          hasTamper = true;
+          this.reportIntegrityViolation('Quebra na cadeia de auditoria detectada (prevHash divergente).', {
+            line: absoluteLine,
+            expectedPrevHash: prevHash,
+            actualPrevHash: parsed.prevHash,
+          });
+          break;
+        }
+
+        const recalculated = this.calculateHash(parsed, prevHash);
+        if (parsed.hash !== recalculated) {
+          hasTamper = true;
+          this.reportIntegrityViolation('Adulteração detectada na cadeia de auditoria (hash inválido).', {
+            line: absoluteLine,
+            expectedHash: recalculated,
+            actualHash: parsed.hash,
+          });
+          break;
+        }
+
+        prevHash = parsed.hash;
+      }
+
+      if (!hasTamper) {
+        this.lastHash = prevHash;
+      }
+    } catch (error) {
+      this.reportIntegrityViolation('Falha ao verificar integridade do log de auditoria no boot.', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  private safeParseLine(line: string): any | null {
+    try {
+      return JSON.parse(line);
+    } catch {
+      return null;
+    }
+  }
+
+  private getHashFromLine(line: string): string {
+    const parsed = this.safeParseLine(line);
+    return parsed?.hash || '0'.repeat(64);
+  }
+
+  private reportIntegrityViolation(message: string, metadata: Record<string, unknown>): void {
+    if (this.onIntegrityViolation) {
+      this.onIntegrityViolation(message, {
+        ...metadata,
+        filePath: this.filePath,
+        checkedEntries: this.integrityCheckEntries,
+      });
+      return;
+    }
+    this.emit('error', new Error(`${message} ${JSON.stringify(metadata)}`));
   }
 
   private enqueue(line: string): void {
